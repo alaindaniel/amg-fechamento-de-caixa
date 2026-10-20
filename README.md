@@ -1,32 +1,47 @@
-# React + TypeScript + Vite
+# Sistema de Fechamento de Caixa 2026 (SaaS)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Sistema web completo desenvolvido a partir da engenharia reversa da planilha de fechamento de caixa (`PLANILHA DE FECHAMENTO 2026.ods`), preparado para comercialização no modelo SaaS com personalização por cliente (White-Label).
 
-Currently, two official plugins are available:
+## 🚀 Repositório & Deploy
+- **Repositório GitHub:** [https://github.com/alaindaniel/amg-fechamento-de-caixa](https://github.com/alaindaniel/amg-fechamento-de-caixa)
+- **Deploy GitHub Pages:** [https://alaindaniel.github.io/amg-fechamento-de-caixa/](https://alaindaniel.github.io/amg-fechamento-de-caixa/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🛠️ Tecnologias Utilizadas
+- **React 19** + **TypeScript**
+- **Vite** (com suporte a base relativa para GitHub Pages)
+- **Tailwind CSS v4**
+- **Lucide React** (Ícones modernos)
+- **Recharts** (Gráficos financeiros)
+- **GitHub Actions** (CI/CD para deploy automático)
 
-## React Compiler
+## 📌 Funcionalidades Principais
+1. **Dashboard Anual:**
+   - Cards executivos: Vendas Totais, Dinheiro, Cartões/Vouchers, Despesas, CMV (%) e DIV (%).
+   - Gráfico de barras com histórico mensal de faturamento e despesas.
+   - Tabela anual consolidada idêntica ao Resumo Anual da planilha.
+2. **Fechamento de Caixa Diário:**
+   - Lançamento por forma de pagamento (37 formas mapeadas).
+   - Discriminação de compras e despesas por fornecedor com classificação instantânea em CMV ou DIV.
+   - Cálculo automático de Redução Z, Diferença de Caixa e Saldo Final Previsto.
+3. **Relatórios Mensais:**
+   - Extrato mês a mês com porcentagem de participação por meio de pagamento.
+   - Geração de relatório pronto para impressão / exportação em PDF (A4 formatado).
+4. **Customização da Empresa (SaaS):**
+   - Modal para personalizar o nome da empresa, ano de exercício e saldo inicial.
+5. **Painel de Auditoria & Integridade ODS:**
+   - Conferência matemática comprovando 100% de precisão em relação à planilha original.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 💻 Como Rodar Localmente
+```bash
+# Instalar dependências
+npm install
 
-## Expanding the Oxlint configuration
+# Iniciar servidor de desenvolvimento local
+npm run dev
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+# Compilar para produção
+npm run build
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+# Publicar no GitHub Pages
+npm run deploy
 ```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
