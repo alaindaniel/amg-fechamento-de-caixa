@@ -42,6 +42,21 @@ export interface ExpenseItem {
   amount: number;
 }
 
+export type AuditActionType = 'CREATE' | 'UPDATE' | 'DELETE' | 'CASH_CLOSING';
+
+export interface AuditLogItem {
+  id: string;
+  timestamp: string; // ISO String
+  userIdentifier: string; // CNPJ / Razão Social do usuário logado
+  userName: string;
+  action: AuditActionType;
+  entity: string; // 'Despesa / Compra' | 'Fechamento Diário' | 'Forma de Pagamento'
+  details: string; // Descrição legível
+  justification?: string; // Motivo obrigatório da alteração/remoção
+  previousValue?: string; // Snapshot do valor anterior
+  newValue?: string; // Snapshot do valor novo
+}
+
 export interface DailyClosing {
   id: string;
   date: string; // YYYY-MM-DD

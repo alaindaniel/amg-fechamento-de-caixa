@@ -115,8 +115,8 @@ export function App() {
         };
       case 'auditoria':
         return {
-          title: 'Conferência ODS & Integridade',
-          subtitle: 'Validação da equivalência matemática e integridade financeira'
+          title: 'Centro de Auditoria & Antifraude',
+          subtitle: 'Trilha de auditoria contra fraudes internas e conferência matemática com a planilha ODS'
         };
       default:
         return { title: 'Sistema de Fechamento', subtitle: '' };

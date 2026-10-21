@@ -2,17 +2,21 @@ import React, { useState, useEffect } from 'react';
 import {
   Plus,
   Trash2,
+  Edit2,
   Save,
-  CheckCircle
+  CheckCircle,
+  ShieldAlert
 } from 'lucide-react';
 import {
   getPaymentMethods,
   getExpenses,
   saveExpense,
+  updateExpense,
   deleteExpense,
   getMonthlyReports,
   saveMonthlyReport
 } from '../services/storage';
+import { EditOrDeleteExpenseModal } from './EditOrDeleteExpenseModal';
 import type { PaymentMethod, ExpenseItem } from '../types';
 
 export const CaixaView: React.FC = () => {
@@ -34,6 +38,12 @@ export const CaixaView: React.FC = () => {
   const [newInvoiceDate, setNewInvoiceDate] = useState<string>('');
   const [newCategory, setNewCategory] = useState<'CMV' | 'DIV'>('CMV');
   const [newAmount, setNewAmount] = useState<string>('');
+
+  // Modal de Edição / Exclusão com Dupla Confirmação & Auditoria Antifraude
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [modalMode, setModalMode] = useState<'EDIT' | 'DELETE'>('EDIT');
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseItem | null>(null);
+  const [auditFeedback, setAuditFeedback] = useState<{ message: string; type: 'success' | 'delete' } | null>(null);
 
   useEffect(() => {
     setPaymentMethods(getPaymentMethods());
@@ -100,11 +110,40 @@ export const CaixaView: React.FC = () => {
     setNewAmount('');
   };
 
-  const handleDeleteExpense = (id: string) => {
-    if (window.confirm("Remover esta despesa?")) {
-      const updated = deleteExpense(id);
-      setExpenses(updated);
-    }
+  const handleOpenEditModal = (expense: ExpenseItem) => {
+    setSelectedExpense(expense);
+    setModalMode('EDIT');
+    setModalOpen(true);
+  };
+
+  const handleOpenDeleteModal = (expense: ExpenseItem) => {
+    setSelectedExpense(expense);
+    setModalMode('DELETE');
+    setModalOpen(true);
+  };
+
+  const handleConfirmEditExpense = (id: string, updates: Partial<ExpenseItem>, justification: string) => {
+    const updated = updateExpense(id, updates, justification);
+    setExpenses(updated);
+    setModalOpen(false);
+    setSelectedExpense(null);
+    setAuditFeedback({
+      message: 'Lançamento atualizado com sucesso e registrado na trilha de auditoria antifraude!',
+      type: 'success'
+    });
+    setTimeout(() => setAuditFeedback(null), 5000);
+  };
+
+  const handleConfirmDeleteExpense = (id: string, justification: string) => {
+    const updated = deleteExpense(id, justification);
+    setExpenses(updated);
+    setModalOpen(false);
+    setSelectedExpense(null);
+    setAuditFeedback({
+      message: 'Lançamento removido com sucesso e registrado na trilha de auditoria antifraude!',
+      type: 'delete'
+    });
+    setTimeout(() => setAuditFeedback(null), 5000);
   };
 
   const handleSaveDailyClosing = () => {
@@ -448,6 +487,31 @@ export const CaixaView: React.FC = () => {
           </div>
         </form>
 
+        {/* Alerta de Auditoria Antifraude */}
+        {auditFeedback && (
+          <div className={`p-4 rounded-xl border flex items-center justify-between shadow-sm animate-in fade-in duration-200 ${
+            auditFeedback.type === 'delete'
+              ? 'bg-rose-50 border-rose-200 text-rose-800'
+              : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+          }`}>
+            <div className="flex items-center space-x-2.5">
+              <ShieldAlert className="w-5 h-5 shrink-0" />
+              <div className="text-xs font-semibold">
+                <span>{auditFeedback.message}</span>
+                <span className="block text-[11px] font-normal opacity-80">
+                  A operação foi gravada com data/hora, identificação de usuário e justificativa na aba de Auditoria.
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setAuditFeedback(null)}
+              className="text-xs font-bold opacity-60 hover:opacity-100 transition-opacity"
+            >
+              Fechar
+            </button>
+          </div>
+        )}
+
         {/* Expenses List Table */}
         <div className="overflow-x-auto max-h-80 overflow-y-auto border border-slate-200 rounded-xl">
           <table className="w-full text-left border-collapse text-xs">
@@ -458,7 +522,7 @@ export const CaixaView: React.FC = () => {
                 <th className="py-2.5 px-4">Emissão</th>
                 <th className="py-2.5 px-4 text-center">Categoria</th>
                 <th className="py-2.5 px-4 text-right">Valor (R$)</th>
-                <th className="py-2.5 px-4 text-center">Ações</th>
+                <th className="py-2.5 px-4 text-center">Ações (Segurança)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800">
@@ -487,13 +551,22 @@ export const CaixaView: React.FC = () => {
                       {formatMoney(exp.amount)}
                     </td>
                     <td className="py-2.5 px-4 text-center">
-                      <button
-                        onClick={() => handleDeleteExpense(exp.id)}
-                        className="text-slate-400 hover:text-rose-600 transition-colors p-1 rounded"
-                        title="Remover Despesa"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center justify-center space-x-1.5">
+                        <button
+                          onClick={() => handleOpenEditModal(exp)}
+                          className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                          title="Alterar lançamento (exige dupla confirmação e justificativa)"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleOpenDeleteModal(exp)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          title="Remover lançamento (exige dupla confirmação e justificativa)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -502,6 +575,19 @@ export const CaixaView: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Modal de Dupla Confirmação & Auditoria Antifraude */}
+      <EditOrDeleteExpenseModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedExpense(null);
+        }}
+        mode={modalMode}
+        expense={selectedExpense}
+        onConfirmDelete={handleConfirmDeleteExpense}
+        onConfirmEdit={handleConfirmEditExpense}
+      />
     </div>
   );
 };

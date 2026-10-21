@@ -4,10 +4,10 @@ import {
   Calculator,
   FileSpreadsheet,
   CreditCard,
-  CheckCircle2,
   Building2,
   DollarSign,
   ShieldAlert,
+  ShieldCheck,
   LogOut
 } from 'lucide-react';
 import type { SubscriberAccount } from '../types';
@@ -36,7 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'caixa', label: 'Fechamento de Caixa', icon: Calculator },
     { id: 'relatorios', label: 'Relatórios Mensais', icon: FileSpreadsheet },
     { id: 'cartoes', label: 'Formas de Pagamento', icon: CreditCard },
-    { id: 'auditoria', label: 'Conferência ODS', icon: CheckCircle2 }
+    { id: 'auditoria', label: 'Auditoria & Antifraude', icon: ShieldCheck }
   ];
 
   // Se o usuário for ADMIN, adiciona atalho para Gestão de Assinantes

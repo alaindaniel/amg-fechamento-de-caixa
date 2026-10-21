@@ -9,7 +9,9 @@ import type {
   PaymentMethod,
   ExpenseItem,
   MonthlyReportData,
-  SubscriberAccount
+  SubscriberAccount,
+  AuditLogItem,
+  AuditActionType
 } from '../types';
 
 // Chave global de contas e sessão
@@ -122,6 +124,7 @@ export function deleteSubscriber(id: string): SubscriberAccount[] {
   localStorage.removeItem(`amg_data_${id}_expenses`);
   localStorage.removeItem(`amg_data_${id}_daily_closings`);
   localStorage.removeItem(`amg_data_${id}_monthly_reports`);
+  localStorage.removeItem(`amg_data_${id}_audit_logs`);
 
   return accounts;
 }
@@ -192,7 +195,6 @@ function getTenantKey(key: string, tenantId?: string): string {
 }
 
 export function initCompanyData(tenantId: string, companyName: string): void {
-  // Salva dados iniciais zerados para uma nova empresa
   const newCompany: CompanyInfo = {
     name: companyName,
     year: 2026,
@@ -201,6 +203,7 @@ export function initCompanyData(tenantId: string, companyName: string): void {
   localStorage.setItem(getTenantKey('company', tenantId), JSON.stringify(newCompany));
   localStorage.setItem(getTenantKey('payment_methods', tenantId), JSON.stringify(INITIAL_PAYMENT_METHODS));
   localStorage.setItem(getTenantKey('expenses', tenantId), JSON.stringify([]));
+  localStorage.setItem(getTenantKey('audit_logs', tenantId), JSON.stringify([]));
 
   // 12 meses zerados
   const emptyReports: MonthlyReportData[] = INITIAL_MONTHLY_REPORTS.map(r => ({
@@ -225,7 +228,6 @@ export function getCompanyInfo(tenantId?: string): CompanyInfo {
   const key = getTenantKey('company', tenantId);
   const data = localStorage.getItem(key);
   if (!data) {
-    // Se for a conta demo, alimenta com seed da Taqualito
     const activeId = tenantId || getCurrentSession()?.id || 'empresa_demo_ods';
     if (activeId === 'empresa_demo_ods') {
       localStorage.setItem(key, JSON.stringify(INITIAL_COMPANY));
@@ -247,7 +249,6 @@ export function saveCompanyInfo(info: CompanyInfo, tenantId?: string): void {
   const key = getTenantKey('company', tenantId);
   localStorage.setItem(key, JSON.stringify(info));
 
-  // Atualiza também o nome na lista de assinantes
   const activeId = tenantId || getCurrentSession()?.id;
   if (activeId && activeId !== 'admin_master') {
     const accounts = getAllSubscribers();
@@ -294,6 +295,54 @@ export function togglePaymentMethod(id: string, tenantId?: string): PaymentMetho
   return updated;
 }
 
+// -------------------------------------------------------------
+// AUDITORIA ANTIFRAUDE (LOGS IRREVERSÍVEIS POR EMPRESA)
+// -------------------------------------------------------------
+export function getAuditLogs(tenantId?: string): AuditLogItem[] {
+  const key = getTenantKey('audit_logs', tenantId);
+  const data = localStorage.getItem(key);
+  if (!data) {
+    return [];
+  }
+  try {
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+}
+
+export function addAuditLog(
+  action: AuditActionType,
+  entity: string,
+  details: string,
+  justification?: string,
+  previousValue?: string,
+  newValue?: string,
+  tenantId?: string
+): void {
+  const session = getCurrentSession();
+  const logs = getAuditLogs(tenantId);
+
+  const newLog: AuditLogItem = {
+    id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    timestamp: new Date().toISOString(),
+    userIdentifier: session ? (session.cnpj || session.email) : 'Sistema',
+    userName: session ? session.companyName : 'Administrador',
+    action,
+    entity,
+    details,
+    justification,
+    previousValue,
+    newValue
+  };
+
+  const updated = [newLog, ...logs];
+  localStorage.setItem(getTenantKey('audit_logs', tenantId), JSON.stringify(updated));
+}
+
+// -------------------------------------------------------------
+// DESPESAS / COMPRAS (COM LOG DE AUDITORIA)
+// -------------------------------------------------------------
 export function getExpenses(tenantId?: string): ExpenseItem[] {
   const key = getTenantKey('expenses', tenantId);
   const data = localStorage.getItem(key);
@@ -317,13 +366,78 @@ export function saveExpense(expense: Omit<ExpenseItem, 'id'>, tenantId?: string)
   };
   const updated = [newExp, ...expenses];
   localStorage.setItem(getTenantKey('expenses', tenantId), JSON.stringify(updated));
+
+  // Log de auditoria
+  addAuditLog(
+    'CREATE',
+    'Despesa / Compra',
+    `Lançamento criado: ${newExp.supplier} (NF: ${newExp.invoiceNumber}) - R$ ${newExp.amount.toFixed(2)} [${newExp.category}]`,
+    'Inclusão inicial de nota fiscal de compra/despesa',
+    undefined,
+    `R$ ${newExp.amount.toFixed(2)} (${newExp.supplier})`,
+    tenantId
+  );
+
   return updated;
 }
 
-export function deleteExpense(id: string, tenantId?: string): ExpenseItem[] {
+export function updateExpense(
+  id: string,
+  updates: Partial<ExpenseItem>,
+  justification: string,
+  tenantId?: string
+): ExpenseItem[] {
   const expenses = getExpenses(tenantId);
+  let oldExp: ExpenseItem | undefined;
+
+  const updated = expenses.map(e => {
+    if (e.id === id) {
+      oldExp = { ...e };
+      return { ...e, ...updates };
+    }
+    return e;
+  });
+
+  localStorage.setItem(getTenantKey('expenses', tenantId), JSON.stringify(updated));
+
+  if (oldExp) {
+    const newExp = updated.find(e => e.id === id);
+    addAuditLog(
+      'UPDATE',
+      'Despesa / Compra',
+      `Alteração de lançamento: Fornecedor ${oldExp.supplier} (NF: ${oldExp.invoiceNumber})`,
+      justification,
+      `R$ ${oldExp.amount.toFixed(2)} [${oldExp.category}] - ${oldExp.supplier} (NF ${oldExp.invoiceNumber})`,
+      newExp ? `R$ ${newExp.amount.toFixed(2)} [${newExp.category}] - ${newExp.supplier} (NF ${newExp.invoiceNumber})` : undefined,
+      tenantId
+    );
+  }
+
+  return updated;
+}
+
+export function deleteExpense(
+  id: string,
+  justification: string,
+  tenantId?: string
+): ExpenseItem[] {
+  const expenses = getExpenses(tenantId);
+  const expToDelete = expenses.find(e => e.id === id);
   const updated = expenses.filter(e => e.id !== id);
   localStorage.setItem(getTenantKey('expenses', tenantId), JSON.stringify(updated));
+
+  if (expToDelete) {
+    addAuditLog(
+      'DELETE',
+      'Despesa / Compra',
+      `Exclusão de lançamento: ${expToDelete.supplier} (NF: ${expToDelete.invoiceNumber}) no valor de R$ ${expToDelete.amount.toFixed(2)} [${expToDelete.category}]`,
+      justification,
+      `R$ ${expToDelete.amount.toFixed(2)} (${expToDelete.supplier} - NF ${expToDelete.invoiceNumber})`,
+      'EXCLUÍDO',
+      tenantId
+    );
+  }
+
   return updated;
 }
 
@@ -336,7 +450,6 @@ export function getMonthlyReports(tenantId?: string): MonthlyReportData[] {
       localStorage.setItem(key, JSON.stringify(INITIAL_MONTHLY_REPORTS));
       return INITIAL_MONTHLY_REPORTS;
     }
-    // Cria 12 meses zerados
     const emptyReports = INITIAL_MONTHLY_REPORTS.map(r => ({
       ...r,
       totalSales: 0,
