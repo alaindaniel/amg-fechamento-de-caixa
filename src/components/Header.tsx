@@ -1,20 +1,31 @@
 import React, { useState } from 'react';
-import { Calendar, RefreshCw, Settings, Building2 } from 'lucide-react';
+import { Calendar, RefreshCw, Settings, Building2, LogOut, ShieldAlert } from 'lucide-react';
 import { resetToSeedData, getCompanyInfo } from '../services/storage';
 import { SettingsModal } from './SettingsModal';
+import type { SubscriberAccount } from '../types';
 
 interface HeaderProps {
   title: string;
   subtitle: string;
+  currentUser: SubscriberAccount;
   onRefresh: () => void;
+  onLogout: () => void;
+  onOpenAdmin?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ title, subtitle, onRefresh }) => {
+export const Header: React.FC<HeaderProps> = ({
+  title,
+  subtitle,
+  currentUser,
+  onRefresh,
+  onLogout,
+  onOpenAdmin
+}) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const company = getCompanyInfo();
 
   const handleReset = () => {
-    if (window.confirm("Deseja restaurar os dados originais migrados da planilha .ods? Todas as edições manuais locais serão resetadas para a versão da planilha.")) {
+    if (window.confirm("Deseja restaurar os dados originais deste fechamento de caixa? Todas as edições manuais locais serão resetadas.")) {
       resetToSeedData();
       onRefresh();
     }
@@ -29,9 +40,10 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, onRefresh }) =>
         </div>
 
         <div className="flex items-center space-x-3">
+          {/* Badge da Empresa / Tenant */}
           <div className="flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-700">
             <Building2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="font-bold text-slate-900 max-w-[180px] truncate">
+            <span className="font-bold text-slate-900 max-w-[180px] truncate" title={company.name}>
               {company.name}
             </span>
           </div>
@@ -41,9 +53,20 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, onRefresh }) =>
             <span>Exercício {company.year}</span>
           </div>
 
+          {currentUser.role === 'ADMIN' && onOpenAdmin && (
+            <button
+              onClick={onOpenAdmin}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900 text-xs font-bold transition-colors shadow-xs cursor-pointer"
+              title="Painel Administrativo de Assinantes"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-purple-700" />
+              <span>Painel Admin</span>
+            </button>
+          )}
+
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold transition-colors shadow-xs"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold transition-colors shadow-xs cursor-pointer"
             title="Personalizar nome da empresa"
           >
             <Settings className="w-3.5 h-3.5 text-emerald-700" />
@@ -52,16 +75,25 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, onRefresh }) =>
 
           <button
             onClick={handleReset}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 transition-colors shadow-xs"
-            title="Restaurar dados originais da planilha ODS"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 transition-colors shadow-xs cursor-pointer"
+            title="Restaurar dados originais"
           >
             <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
-            <span>Restaurar ODS</span>
+            <span>Restaurar</span>
+          </button>
+
+          <button
+            onClick={onLogout}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-xs font-bold text-slate-600 transition-colors shadow-xs cursor-pointer"
+            title="Sair do sistema"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sair</span>
           </button>
         </div>
       </header>
 
-      {/* Company Customization Settings Modal */}
+      {/* Modal de Configuração da Empresa */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}

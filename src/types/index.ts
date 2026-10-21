@@ -4,6 +4,27 @@ export interface CompanyInfo {
   initialBalance: number;
 }
 
+export type UserRole = 'ADMIN' | 'SUBSCRIBER';
+
+export type SubscriptionStatus = 'ACTIVE' | 'TRIAL' | 'EXPIRED' | 'BLOCKED';
+
+export interface SubscriberAccount {
+  id: string;
+  cnpj: string; // Ex: "00.000.000/0001-00" ou apenas números
+  companyName: string; // Razão Social / Nome Fantasia
+  email: string;
+  password: string; // Senha de acesso
+  role: UserRole;
+  status: SubscriptionStatus;
+  planName: string; // Mensal Pro, Basic, etc.
+  monthlyFee: number; // Ex: 97.00
+  expiresAt: string; // YYYY-MM-DD
+  createdAt: string;
+  lastLogin?: string;
+  phone?: string;
+  notes?: string;
+}
+
 export interface PaymentMethod {
   id: string;
   name: string;

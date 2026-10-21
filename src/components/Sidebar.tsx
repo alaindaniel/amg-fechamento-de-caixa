@@ -6,22 +6,30 @@ import {
   CreditCard,
   CheckCircle2,
   Building2,
-  DollarSign
+  DollarSign,
+  ShieldAlert,
+  LogOut
 } from 'lucide-react';
+import type { SubscriberAccount } from '../types';
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   companyName: string;
   year: number;
-  onOpenSettings?: () => void;
+  currentUser: SubscriberAccount;
+  onLogout: () => void;
+  onReturnToAdmin?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
   companyName,
-  year
+  year,
+  currentUser,
+  onLogout,
+  onReturnToAdmin
 }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard Anual', icon: LayoutDashboard },
@@ -30,6 +38,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'cartoes', label: 'Formas de Pagamento', icon: CreditCard },
     { id: 'auditoria', label: 'Conferência ODS', icon: CheckCircle2 }
   ];
+
+  // Se o usuário for ADMIN, adiciona atalho para Gestão de Assinantes
+  if (currentUser.role === 'ADMIN') {
+    menuItems.push({ id: 'admin', label: 'Gestão de Assinantes', icon: ShieldAlert });
+  }
 
   return (
     <aside className="w-64 bg-slate-900 text-slate-100 flex flex-col justify-between h-screen sticky top-0 shadow-xl border-r border-slate-800 shrink-0">
@@ -49,6 +62,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
+        {/* Indicador de Admin simulando cliente */}
+        {onReturnToAdmin && (
+          <div className="p-3 bg-purple-900/40 border-b border-purple-800/60 flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-1.5 text-purple-300 font-bold">
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>Visão de Assinante</span>
+            </div>
+            <button
+              onClick={onReturnToAdmin}
+              className="text-[10px] bg-purple-600 hover:bg-purple-500 text-white px-2 py-0.5 rounded font-bold transition-colors cursor-pointer"
+            >
+              Voltar ao Admin
+            </button>
+          </div>
+        )}
+
         {/* Navigation Menu */}
         <nav className="p-3 space-y-1">
           <div className="px-3 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
@@ -61,7 +90,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer ${
                   isActive
                     ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-semibold'
                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -75,15 +104,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Footer Status */}
-      <div className="p-4 border-t border-slate-800 bg-slate-950/30 text-xs text-slate-400 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Building2 className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="truncate max-w-[110px]" title={companyName}>{companyName}</span>
+      {/* Footer Status & Logout */}
+      <div className="p-4 border-t border-slate-800 bg-slate-950/40 text-xs text-slate-400 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="truncate max-w-[110px]" title={currentUser.companyName}>
+              {currentUser.companyName}
+            </span>
+          </div>
+          <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-500/20">
+            {currentUser.role === 'ADMIN' ? 'MASTER' : 'ASSINANTE'}
+          </span>
         </div>
-        <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-[11px] font-medium border border-emerald-500/20">
-          SaaS v2026
-        </span>
+
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center justify-center space-x-2 py-2 px-3 bg-slate-800 hover:bg-rose-500/20 hover:text-rose-400 text-slate-300 rounded-lg text-xs font-bold transition-all cursor-pointer border border-slate-700/60"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Sair da Conta</span>
+        </button>
       </div>
     </aside>
   );
