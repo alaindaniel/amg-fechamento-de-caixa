@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Calendar, RefreshCw, Settings, Building2, LogOut, ShieldAlert } from 'lucide-react';
+import { Calendar, RefreshCw, Settings, Building2, LogOut, ShieldAlert, KeyRound } from 'lucide-react';
 import { resetToSeedData, getCompanyInfo } from '../services/storage';
 import { SettingsModal } from './SettingsModal';
+import { ChangePasswordModal } from './ChangePasswordModal';
 import type { SubscriberAccount } from '../types';
 
 interface HeaderProps {
@@ -11,6 +12,7 @@ interface HeaderProps {
   onRefresh: () => void;
   onLogout: () => void;
   onOpenAdmin?: () => void;
+  onUserUpdated: (updatedUser: SubscriberAccount) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,9 +21,11 @@ export const Header: React.FC<HeaderProps> = ({
   currentUser,
   onRefresh,
   onLogout,
-  onOpenAdmin
+  onOpenAdmin,
+  onUserUpdated
 }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState<boolean>(false);
   const company = getCompanyInfo();
 
   const handleReset = () => {
@@ -64,6 +68,16 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
+          {/* Botão de Alterar Senha */}
+          <button
+            onClick={() => setIsPasswordModalOpen(true)}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition-colors shadow-xs cursor-pointer"
+            title="Alterar minha senha de acesso"
+          >
+            <KeyRound className="w-3.5 h-3.5 text-amber-700" />
+            <span>Alterar Senha</span>
+          </button>
+
           <button
             onClick={() => setIsSettingsOpen(true)}
             className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold transition-colors shadow-xs cursor-pointer"
@@ -98,6 +112,14 @@ export const Header: React.FC<HeaderProps> = ({
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onSave={onRefresh}
+      />
+
+      {/* Modal de Alteração de Senha */}
+      <ChangePasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+        currentUser={currentUser}
+        onPasswordChanged={onUserUpdated}
       />
     </>
   );

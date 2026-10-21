@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import {
-  Lock,
   Building2,
   KeyRound,
   AlertCircle,
-  ShieldCheck,
   UserCheck,
   LogIn
 } from 'lucide-react';
@@ -49,12 +47,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     }, 400);
   };
 
-  const fillQuick = (idVal: string, passVal: string) => {
-    setIdentifier(idVal);
-    setPassword(passVal);
-    setError('');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-center items-center p-4">
       <div className="w-full max-w-md">
@@ -86,7 +78,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                   type="text"
                   value={identifier}
                   onChange={e => setIdentifier(e.target.value)}
-                  placeholder="Ex: 12.345.678/0001-90 ou Taqualito"
+                  placeholder="Ex: 12.345.678/0001-90 ou contato@empresa.com"
                   className="w-full pl-10 pr-3 py-2.5 bg-slate-950/70 border border-slate-700 rounded-xl text-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all placeholder:text-slate-600"
                 />
               </div>
@@ -132,46 +124,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Access Box */}
-          <div className="mt-6 pt-5 border-t border-slate-800 text-xs">
-            <p className="text-slate-400 font-bold mb-2.5 text-center flex items-center justify-center space-x-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Acessos Rápidos de Demonstração:</span>
-            </p>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => fillQuick('admin@sistema.com', 'admin')}
-                className="p-2.5 bg-slate-950/80 hover:bg-slate-800 border border-purple-500/30 hover:border-purple-400 text-left rounded-xl transition-all cursor-pointer group"
-              >
-                <div className="flex items-center space-x-1.5 text-purple-400 font-bold text-[11px]">
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Painel Admin Master</span>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-0.5 truncate">Gestor de Assinantes</p>
-                <span className="text-[9px] text-slate-500 block mt-1">admin / admin</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillQuick('12.345.678/0001-90', '123')}
-                className="p-2.5 bg-slate-950/80 hover:bg-slate-800 border border-emerald-500/30 hover:border-emerald-400 text-left rounded-xl transition-all cursor-pointer group"
-              >
-                <div className="flex items-center space-x-1.5 text-emerald-400 font-bold text-[11px]">
-                  <Building2 className="w-3.5 h-3.5" />
-                  <span>Empresa Assinante</span>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-0.5 truncate">Via Taqualito LTDA</p>
-                <span className="text-[9px] text-slate-500 block mt-1">CNPJ / senha: 123</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         <p className="text-center text-slate-500 text-[11px] mt-6">
-          Sistema Seguro com Isolamento Completo de Bancos de Dados por Empresa
+          Acesso Seguro com Criptografia e Isolamento de Dados por Assinante
         </p>
       </div>
     </div>

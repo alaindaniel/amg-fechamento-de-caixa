@@ -54,6 +54,12 @@ export function App() {
     setRefreshKey(prev => prev + 1);
   };
 
+  const handleUserUpdated = (updatedUser: SubscriberAccount) => {
+    setCurrentUser(updatedUser);
+    saveCurrentSession(updatedUser);
+    setRefreshKey(prev => prev + 1);
+  };
+
   // Admin acessando o fechamento de uma empresa assinante específica
   const handleAdminSwitchToTenant = (tenantAccount: SubscriberAccount) => {
     setAdminSimulatingTenant(tenantAccount);
@@ -141,11 +147,16 @@ export function App() {
           onRefresh={handleRefresh}
           onLogout={handleLogout}
           onOpenAdmin={currentUser.role === 'ADMIN' ? () => setActiveTab('admin') : undefined}
+          onUserUpdated={handleUserUpdated}
         />
 
         <main className="p-8 max-w-7xl w-full mx-auto space-y-6" key={refreshKey}>
           {activeTab === 'admin' && currentUser.role === 'ADMIN' && (
-            <AdminPanel onSwitchToTenant={handleAdminSwitchToTenant} />
+            <AdminPanel
+              onSwitchToTenant={handleAdminSwitchToTenant}
+              currentUser={currentUser}
+              onUserUpdated={handleUserUpdated}
+            />
           )}
           {activeTab === 'dashboard' && <DashboardView />}
           {activeTab === 'caixa' && <CaixaView />}

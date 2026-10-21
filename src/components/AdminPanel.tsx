@@ -13,7 +13,9 @@ import {
   Save,
   X,
   Clock,
-  ArrowRight
+  ArrowRight,
+  ShieldAlert,
+  KeyRound
 } from 'lucide-react';
 import {
   getAllSubscribers,
@@ -21,18 +23,26 @@ import {
   updateSubscriber,
   deleteSubscriber
 } from '../services/storage';
+import { ChangePasswordModal } from './ChangePasswordModal';
 import type { SubscriberAccount, SubscriptionStatus } from '../types';
 
 interface AdminPanelProps {
   onSwitchToTenant: (account: SubscriberAccount) => void;
+  currentUser: SubscriberAccount;
+  onUserUpdated: (account: SubscriberAccount) => void;
 }
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToTenant }) => {
+export const AdminPanel: React.FC<AdminPanelProps> = ({
+  onSwitchToTenant,
+  currentUser,
+  onUserUpdated
+}) => {
   const [subscribers, setSubscribers] = useState<SubscriberAccount[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isChangeAdminPasswordOpen, setIsChangeAdminPasswordOpen] = useState<boolean>(false);
 
   // Form State
   const [companyName, setCompanyName] = useState<string>('');
@@ -190,15 +200,45 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToTenant }) => {
           <p className="text-[11px] text-slate-500 mt-1">Cadastradas no sistema</p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center space-y-2">
           <button
             onClick={handleOpenCreate}
-            className="w-full py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-emerald-500/20 flex items-center justify-center space-x-2 cursor-pointer"
+            className="w-full py-2.5 px-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-emerald-500/20 flex items-center justify-center space-x-1.5 cursor-pointer"
           >
             <UserPlus className="w-4 h-4 stroke-[2.5]" />
             <span>Novo Assinante</span>
           </button>
+
+          <button
+            onClick={() => setIsChangeAdminPasswordOpen(true)}
+            className="w-full py-2.5 px-3 bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+            title="Alterar a senha do Administrador Master"
+          >
+            <KeyRound className="w-4 h-4 text-purple-700" />
+            <span>Alterar Senha Admin</span>
+          </button>
         </div>
+      </div>
+
+      {/* Caixa de Segurança do Admin Master */}
+      <div className="bg-gradient-to-r from-slate-900 to-purple-950 p-4 rounded-xl border border-purple-800/60 text-white flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center space-x-2.5">
+          <ShieldAlert className="w-5 h-5 text-purple-400 shrink-0" />
+          <div>
+            <span className="font-bold text-purple-200">Segurança da Conta Master:</span>
+            <p className="text-slate-400 text-[11px]">
+              O seu login de administrador é <span className="text-white font-mono font-bold">{currentUser.email}</span>. Altere sua senha para que apenas você tenha acesso a esta área.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setIsChangeAdminPasswordOpen(true)}
+          className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition-colors flex items-center space-x-1.5 cursor-pointer shadow-sm shrink-0"
+        >
+          <KeyRound className="w-3.5 h-3.5" />
+          <span>Trocar Senha Master</span>
+        </button>
       </div>
 
       {/* Tabela de Assinantes e Controles */}
@@ -516,6 +556,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onSwitchToTenant }) => {
           </div>
         </div>
       )}
+
+      {/* Modal de Alteração de Senha do Admin Master */}
+      <ChangePasswordModal
+        isOpen={isChangeAdminPasswordOpen}
+        onClose={() => setIsChangeAdminPasswordOpen(false)}
+        currentUser={currentUser}
+        onPasswordChanged={onUserUpdated}
+      />
     </div>
   );
 };
